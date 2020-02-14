@@ -1,0 +1,9 @@
+default:
+  # add the stock tickers to rebalance here:
+  tickers:
+    - HD
+    - DIS
+    - MSFT
+    - BA
+    
+# leave this blank line below (otherwise throws incomplete final line warning)
