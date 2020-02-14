@@ -9,7 +9,6 @@ config <- config::get()
 Quandl.api_key('62FeHrDxMUhWtQ1yWTsr')
 
 
-
 eod_path <- function(ticker) {
   # this is just formatting the request to the API correctly.
   # e.g. EOD/<YOUR_TICKER>
