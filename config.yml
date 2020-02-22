@@ -1,9 +1,23 @@
 default:
   # add the stock tickers to rebalance here:
   tickers:
-    - HD
-    - DIS
-    - MSFT
-    - BA
+    - AMZN
+    - ADBE
+    - INTC
+    - BG
+    - GLTR
+    - MET
+    - NEE
+    - IBM
+    - OHI
+    - NKE
+    - AXP
+    - CACI
+    - CNC
+    - EMR
+    - LDOS
+    - MDT
+    - MPLX
+    - SO
     
 # leave this blank line below (otherwise throws incomplete final line warning)
