@@ -1,40 +1,25 @@
 library(tidyverse)
-# library(config) # No longer needed if we aren't using config.yml
+library(openxlsx)
 library(tidyquant)
 library(Quandl)
 library(timetk)
 library(PortfolioAnalytics)
-# library(DEoptim) # I dont think DEoptim is being used
 library(ROI)
-require(ROI.plugin.glpk)
 require(ROI.plugin.quadprog)
 
-
-
-# Loads a config file. The default path for loading the config
-# is config.yml in the current directory.
-# config <- config::get()
-# modified_tickers2 <- sprintf("EOD/%s", config$tickers)
-# I commented out the above and replaced it with read excel because we will likely be provided an excel file with the tickers
-
-
-
-tickers = readxl::read_excel("tickers.xlsx", col_names = FALSE) %>% pull()
-
-modified_tickers = sprintf("EOD/%s", tickers)
-
-
-
-
+# Quandl API Key for our EOD stock prices subscription
 quandl_api_key("mRJDZwn3giwAm1kowtFr")
 
+# Pull tickers from Excel file
+tickers = readxl::read_excel("tickers.xlsx", col_names = FALSE) %>% pull()
 
+# Add EOD prefix to tickers so they pull end of day prices from QUandl
+modified_tickers = sprintf("EOD/%s", tickers)
 
+# Pull EOD stock prices from Quandl between 2 dates, must be at least 3 years for it to work properly
+stock_prices = group_by(tq_get(modified_tickers, get = "quandl", from = "2016-01-01", to = "2020-01-01"), symbol)
 
-stock_prices = group_by(tq_get(modified_tickers, get = "quandl", from = "2016-01-01", to = "2016-12-31"), symbol)
-
-stock_prices %>% head()
-
+# Calculate returns on the stocks over the time period
 stock_returns = stock_prices %>%
   tq_transmute(select     = adj_close,
                mutate_fun = periodReturn,
@@ -43,35 +28,28 @@ stock_returns = stock_prices %>%
                col_rename = "returns") %>%
   pivot_wider(names_from = symbol, values_from = returns)
 
+# Coerce the stock returns into a xts time series
+stock_returns = stock_returns %>% tk_xts(silent = TRUE)
 
-stock_returns %>% head()
+# Create a portfolio
+init = portfolio.spec(assets = colnames(stock_returns))
 
-stock_returns=stock_returns %>% tk_xts(silent = TRUE)
+# Add the constraint on the minimum and maximum weight that a single stock can have
+init = add.constraint(portfolio = init, type = "box", min = 0.005, max = 0.1)
 
+# Add the quadratic objective for the solver
+qu = add.objective(portfolio = init, type = "quadratic_utility", risk_aversion = 1)
 
-
-
-
-
-init = portfolio.spec(assets=colnames(stock_returns))
-init = add.constraint(portfolio=init, type="box", min=0.005, max=0.1) #if portfolio is $1M, 0.5% is 5k and 10% is 100k
-#why are init and qu set as different variables? could probably pipe (%>%) all the constraints and objectives into a single varaible
-
-#qu = add.objective(portfolio=init, type="return", name="mean")
-#qu = add.objective(portfolio=qu, type="risk", name="var", risk_aversion=0.25)
-qu = add.objective(portfolio=init, type="quadratic_utility", risk_aversion=1) #i think the above 2 lines can be done in 1 step. also, changed risk aversion to 1 but should probably ask todd for feedback
-
-print(qu)
-
-
-
-head(stock_returns) #why are you printing stock returns? this will spam the console.... i changed to head() to limit output to 6 rows
-opt_qu = optimize.portfolio(R=stock_returns, portfolio=qu,
-                             optimize_method="ROI",
-                             trace=TRUE) #i dont think trace=true has benefits if we are using ROI as the solver
+# Optimize the portfolio based on the above constraints and objectives using quadratic programming
+opt_qu = optimize.portfolio(R = stock_returns, portfolio = qu, optimize_method = "quadprog")
 print(opt_qu)
 
-print(extractWeights(opt_qu))
+# Extract the optimized weights and put them in a data frame with the tickers
+weights = extractWeights(opt_qu) %>% as.data.frame()
+df = cbind(tickers, weights)
 
-weights <- extractWeights(opt_qu)
-write.table(weights, file = "weights.csv", sep=", ", col.names = FALSE)
+# Export the final data frame to an Excel file
+wb = createWorkbook()
+addWorksheet(wb, "Sheet1")
+writeData(wb, "Sheet1", df, colNames = FALSE)
+saveWorkbook(wb, "weights.xlsx", overwrite = TRUE)
