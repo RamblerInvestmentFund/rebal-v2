@@ -13,7 +13,7 @@ quandl_api_key("mRJDZwn3giwAm1kowtFr")
 # Pull tickers from Excel file
 tickers <- readxl::read_excel("tickers.xlsx", col_names = FALSE) %>% pull()
 
-# Add EOD prefix to tickers so they pull end of day prices from QUandl
+# Add EOD prefix to tickers so they pull end of day prices from Quandl
 modified_tickers <- sprintf("EOD/%s", tickers)
 
 # Pull EOD stock prices from Quandl between 2 dates, must be at least 3 years for it to work properly
