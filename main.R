@@ -11,7 +11,15 @@ require(ROI.plugin.quadprog)
 quandl_api_key("mRJDZwn3giwAm1kowtFr")
 
 # Pull tickers from Excel file
-tickers <- readxl::read_excel("tickers.xlsx", col_names = FALSE) %>% pull()
+tickers <- readxl::read_excel("tickers.xlsx/Sheet!", col_names = FALSE) %>% pull()
+
+# Pull baskets from Excel file
+tickerbaskets <- readxl::read_excel("tickers.xlsx/Sheet!", col_names = FALSE) %>% pull()
+
+# Pull basket weights from Sheet2
+baskets <- read::read_excel("tickets.xlsx/Sheet2!", colnames = FALSE) %>% pull()
+min <- read::read_excel("tickets.xlsx/Sheet2!", colnames = FALSE) %>% pull()
+max <- read::read_excel("tickets.xlsx/Sheet2!", colnames = FALSE) %>% pull()
 
 # Add EOD prefix to tickers so they pull end of day prices from QUandl
 modified_tickers <- sprintf("EOD/%s", tickers)
@@ -31,6 +39,8 @@ stock_returns <- stock_prices %>%
 # Coerce the stock returns into a xts time series
 stock_returns <- stock_returns %>% tk_xts(silent = TRUE)
 
+# Create loop for portfolios
+
 # Create a portfolio
 init <- portfolio.spec(assets = colnames(stock_returns))
 
@@ -47,6 +57,16 @@ print(opt_qu)
 # Extract the optimized weights and put them in a data frame with the tickers
 weights <- extractWeights(opt_qu) %>% as.data.frame()
 df <- cbind(tickers, weights)
+
+# Calculate returns for each group
+
+# Create portfolio of portfolio
+
+# Add constraints of those portfolios
+
+# Use the output of the portfolio <- copy the output pattern of the group
+
+# Calculate individual weights based on group allocations
 
 # Export the final data frame to an Excel file
 wb <- createWorkbook()
