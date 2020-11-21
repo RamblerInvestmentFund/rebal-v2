@@ -13,18 +13,18 @@ quandl_api_key("mRJDZwn3giwAm1kowtFr")
 # Pull tickers from Excel file
 xl <- readxl::read_excel("tickers.xlsx")
 
-# Add EOD prefix to tickers so they pull end of day prices from QUandl
+# Add EOD prefix to tickers so they pull end of day prices from Quandl
 modified_tickers <- sprintf("EOD/%s", xl$Ticker)
 
 # Pull EOD stock prices from Quandl between 2 dates, must be at least 3 years for it to work properly
-stock_prices <- group_by(tq_get(modified_tickers, get = "quandl", from = "2016-01-01", to = "2020-11-01"), symbol)
+stock_prices <- group_by(tq_get(modified_tickers, get = "quandl", from = "2017-11-01", to = "2020-11-01"), symbol)
 
 # Calculate returns on the stocks over the time period
 stock_returns <- stock_prices %>%
   tq_transmute(select     = adj_close,
                mutate_fun = periodReturn,
                period     = "daily",
-               type       = "arithmetic",
+               type       = "log",
                col_rename = "returns") %>%
   pivot_wider(names_from = symbol, values_from = returns)
 
