@@ -35,7 +35,7 @@ stock_returns <- stock_returns %>% tk_xts(silent = TRUE)
 init <- portfolio.spec(assets = colnames(stock_returns))
 
 # Add the constraint on the minimum and maximum weight that a single stock can have
-init <- add.constraint(portfolio = init, type = "box", min = xl_sheet1$MinWeight, max = xl_sheet1$MaxWeight)
+init <- add.constraint(portfolio = init, type = "box", min = xl$MinWeight, max = xl$MaxWeight)
 
 # Add the quadratic objective for the solver
 qu <- add.objective(portfolio = init, type = "quadratic_utility", risk_aversion = 1)
@@ -46,10 +46,12 @@ print(opt_qu)
 
 # Extract the optimized weights and put them in a data frame with the tickers
 weights <- extractWeights(opt_qu) %>% as.data.frame()
-df <- cbind(xl_sheet1$Ticker, weights)
+df <- cbind(xl$Ticker, weights)
+colnames(df) <- c("Ticker","Weight")
 
 # Export the final data frame to an Excel file
-#wb <- createWorkbook()
-#addWorksheet(wb, "Sheet1")
-#writeData(wb, "Sheet1", df, colNames = FALSE)
-#saveWorkbook(wb, "weights.xlsx", overwrite = TRUE)
+wb <- createWorkbook()
+addWorksheet(wb, "Sheet1")
+writeData(wb, "Sheet1", df)
+saveWorkbook(wb, "weights.xlsx", overwrite = TRUE)
+
