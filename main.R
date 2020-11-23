@@ -17,7 +17,7 @@ xl <- readxl::read_excel("tickers.xlsx")
 modified_tickers <- sprintf("EOD/%s", xl$Ticker)
 
 # Pull EOD stock prices from Quandl between 2 dates, must be at least 3 years for it to work properly
-stock_prices <- group_by(tq_get(modified_tickers, get = "quandl", from = "2017-11-01", to = "2020-11-01"), symbol)
+stock_prices <- group_by(tq_get(modified_tickers, get = "quandl", from = Sys.Date()-(365*5), to = Sys.Date()), symbol)
 
 # Calculate returns on the stocks over the time period
 stock_returns <- stock_prices %>%
