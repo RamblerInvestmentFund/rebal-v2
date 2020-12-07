@@ -46,7 +46,7 @@ print(opt_qu)
 
 # Extract the optimized weights and put them in a data frame with the tickers
 weights <- extractWeights(opt_qu) %>% as.data.frame()
-df <- cbind(xl$Ticker, weights)
+df <- cbind(xl$Ticker, round(weights, 4))
 colnames(df) <- c("Ticker","Weight")
 
 # Export the final data frame to an Excel file
