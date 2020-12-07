@@ -23,5 +23,3 @@ The result was a radically simplified rebalancer with a significantly smaller co
 
 - Sam Sendelbach
 - Ben Karenas 
-- Anthony Peters
-- Nick Barone
