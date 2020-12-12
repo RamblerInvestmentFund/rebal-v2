@@ -28,11 +28,12 @@ for (i in split_groups) {
 # Add EOD prefix to tickers so they pull end of day prices from Quandl
 modified_tickers <- sprintf("EOD/%s", xl_tickers$Ticker)
 
-# Pull EOD stock prices from Quandl for the last 5 years (must be at least 3 years for it to work properly)
-stock_prices <- group_by(tq_get(modified_tickers, get = "quandl", from = Sys.Date()-(365*5), to = Sys.Date()), symbol)
+# Pull EOD stock prices from Quandl (must be at least 3 years for it to work properly)
+stock_prices <- tq_get(modified_tickers, get = "quandl", from = Sys.Date()-(365*3), to = Sys.Date())
 
 # Calculate returns on the stocks over the time period
 stock_returns <- stock_prices %>%
+  group_by(symbol) %>%
   tq_transmute(select = adj_close,
                mutate_fun = periodReturn,
                period = "daily",
@@ -46,11 +47,17 @@ stock_returns <- stock_returns %>% tk_xts(silent = TRUE)
 # Create a portfolio
 pspec <- portfolio.spec(assets = colnames(stock_returns))
 
-# Add the constraints on the minimum and maximum weight that a group and a single stock can have
+# Add full investment constraint so the sum of all weights is 1
+pspec <- add.constraint(portfolio=pspec,
+                        type="full_investment")
+
+# Add constraint on the min and max for each asset
 pspec <- add.constraint(portfolio = pspec, 
                        type = "box", 
                        min = xl_tickers$MinWeight, 
                        max = xl_tickers$MaxWeight)
+
+# Add constraint on the min and max for each group
 pspec <- add.constraint(portfolio = pspec, 
                         type = "group", 
                         groups = groups, 
@@ -65,17 +72,37 @@ qu <- add.objective(portfolio = pspec,
 # Optimize the portfolio based on the above constraints and objectives using quadratic programming
 opt_qu <- optimize.portfolio(R = stock_returns, 
                              portfolio = qu, 
-                             optimize_method = "quadprog")
+                             optimize_method = "quadprog",
+                             trace = TRUE)
 print(opt_qu)
+
+# Extract the mean and standard deviation and annualize them
+obj_measures <- extractObjectiveMeasures(opt_qu)
+ann_return <- round(obj_measures$mean * 252, 4)
+print(paste("Expected Annualized Return:", ann_return))
+ann_vol <- round(obj_measures$StdDev * sqrt(252), 4)
+print(paste("Standard Deviation:", ann_vol))
+
+# Calculate portfolio utility
+utility <- round(ann_return - 0.5 * 1 * ann_vol**2, 4)
+print(paste("Portfolio Utility:", utility))
 
 # Extract the optimized weights and put them in a data frame with the tickers
 weights <- extractWeights(opt_qu) %>% as.data.frame()
 df <- cbind(xl_tickers$Ticker, round(weights, 4))
 colnames(df) <- c("Ticker","Weight")
 
+# Combine stats into a data frame
+stat_return <- list("Expected Annualized Return", ann_return)
+stat_vol <- list("Standard Deviation", ann_vol)
+stat_utility <- list("Portfolio Utility", utility)
+stats <- rbind(stat_return, stat_vol, stat_utility) %>% as.data.frame()
+
 # Export the final data frame to an Excel file
 wb <- createWorkbook()
-addWorksheet(wb, "Sheet1")
-writeData(wb, "Sheet1", df)
+addWorksheet(wb, "Weights")
+writeData(wb, "Weights", df)
+addWorksheet(wb, "Stats")
+writeData(wb, "Stats", stats, colNames = FALSE)
 saveWorkbook(wb, "weights.xlsx", overwrite = TRUE)
 
