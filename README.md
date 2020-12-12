@@ -13,11 +13,9 @@ The result was a radically simplified rebalancer with a significantly smaller co
 # Method
 
 1. Loads the portfolio tickers from an Excel spreadsheet.
-2. Pulls end of day prices (3yr minimum) for each position.
+2. Pulls end of day prices (adjusted) for each position.
 3. Performs quadratic utility optimization to find optimal weights for each postition.
 4. Exports the weights to another Excel sheet for consumption.
-
-
 
 # Contributors
 
