@@ -8,7 +8,7 @@ library(ROI)
 require(ROI.plugin.quadprog)
 
 # Quandl API Key for our EOD stock prices subscription
-quandl_api_key("mRJDZwn3giwAm1kowtFr")
+quandl_api_key("#####")
 
 # Pull tickers and groups from Excel file and order alphabetically by group
 xl_tickers <- readxl::read_excel("tickers.xlsx", sheet = "Tickers")
